@@ -89,13 +89,25 @@
 
     /* The kind chips reuse .source-btn: same pill, same active state, one
        vocabulary of controls above the results. */
+    .search-toolbar {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
     .search-filters {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 14px;
+      flex: 1;
     }
-    .search-filters:empty { margin-bottom: 0; }
+    .search-view {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+    .search-view .source-btn { padding: 5px 10px; }
+    .search-view .source-btn i { font-size: 15px; }
 
     #search-more .source-btn { display: inline-flex; }
 
@@ -315,6 +327,51 @@
       align-items: center;
       gap: 4px;
       flex-wrap: wrap;
+    }
+
+    /* ── List view: the same cards, one row each ──────────────
+       Scoped to the id so it outweighs Bootstrap's col-* widths. The poster
+       stops being a positioning context, so the status ribbon anchors to the
+       row and sits at its right edge instead of on a 56px thumbnail. */
+    #search-results.results-list { --bs-gutter-y: .5rem; }
+    #search-results.results-list > * {
+      flex: 0 0 100%;
+      width: 100%;
+      max-width: 100%;
+    }
+    #search-results.results-list .result-card {
+      flex-direction: row;
+      align-items: center;
+      position: relative;
+    }
+    #search-results.results-list .result-card:hover {
+      transform: none !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,.25) !important;
+    }
+    #search-results.results-list .poster-wrap {
+      position: static;
+      width: 56px;
+    }
+    #search-results.results-list .result-card:hover .poster-wrap img { transform: none; }
+    #search-results.results-list .poster-overlay,
+    #search-results.results-list .poster-play { display: none; }
+    #search-results.results-list .poster-noimg { font-size: 1.4rem; }
+    #search-results.results-list .card-meta {
+      min-width: 0;
+      padding: 10px 140px 10px 14px;
+    }
+    #search-results.results-list .card-meta .card-title-text { font-size: 14px; }
+    #search-results.results-list .status-ribbon {
+      top: 50%; right: 12px;
+      transform: translateY(-50%);
+    }
+    #search-results.results-list .skeleton-card { aspect-ratio: auto; height: 84px; }
+    @media (max-width: 575.98px) {
+      #search-results.results-list .card-meta { padding-right: 12px; }
+      #search-results.results-list .status-ribbon {
+        top: auto; bottom: 8px; right: 8px;
+        transform: none;
+      }
     }
 
     /* ═══════════════════════════════════════════════════════
