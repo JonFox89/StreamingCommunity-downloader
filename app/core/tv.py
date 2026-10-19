@@ -15,6 +15,8 @@ from app.core._shared import (
     _parse_content,
     _get_m3u8_key,
     _get_m3u8_url,
+    embed_referer,
+    apply_video_host,
 )
 from app.core.paths import episode_path, fmt_ep  # noqa: F401  (fmt_ep re-exported)
 
@@ -138,8 +140,8 @@ def _get_iframe(tv_id, ep_id, domain, token):
     else:
         raise RuntimeError(f"Cannot fetch episode iframe: HTTP {req.status_code}")
 
-    url_embed = BeautifulSoup(req.text, "lxml").find("iframe").get("src")
-    # vixcloud.co /embed/ is behind Cloudflare — fetch via cloudscraper.
+    url_embed = apply_video_host(BeautifulSoup(req.text, "lxml").find("iframe").get("src"))
+    # The vixcloud /embed/ is behind Cloudflare — fetch via cloudscraper.
     script_text = _fetch_vixcloud_embed(url_embed, referer=f"https://{domain}/")
     return script_text, url_embed
 
@@ -160,10 +162,7 @@ def get_tv_languages(tv_id: int, slug: str, domain: str, version: str) -> dict:
     embed_content, url_embed = _get_iframe(tv_id, eps[0]["id"], domain, token)
     json_win_video, json_win_param = _parse_content(embed_content, url_embed)
     m3u8_url = _get_m3u8_url(json_win_video, json_win_param)
-    referer = (
-        f"https://vixcloud.co/embed/{json_win_video['id']}"
-        f"?token={json_win_param['token']}&expires={json_win_param['expires']}"
-    )
+    referer = embed_referer(json_win_video, json_win_param)
     langs = fetch_master_languages(m3u8_url, referer)
     explicit_lang = parse_qs(urlparse(url_embed).query).get("lang", [None])[0]
     langs["lang"] = explicit_lang
@@ -180,10 +179,7 @@ def get_episode_languages(tv_id: int, ep_id: int, domain: str, token: str) -> di
     embed_content, url_embed = _get_iframe(tv_id, ep_id, domain, token)
     json_win_video, json_win_param = _parse_content(embed_content, url_embed)
     m3u8_url = _get_m3u8_url(json_win_video, json_win_param)
-    referer = (
-        f"https://vixcloud.co/embed/{json_win_video['id']}"
-        f"?token={json_win_param['token']}&expires={json_win_param['expires']}"
-    )
+    referer = embed_referer(json_win_video, json_win_param)
     return fetch_master_languages(m3u8_url, referer)
 
 
@@ -217,7 +213,7 @@ def download_episode(
         logger.info("Video ID: %s token: %.8s... audio lang: %s", json_win_video['id'], json_win_param.get('token', ''), json_win_video.get('lang', 'it'))
 
         embed_referer = (
-            f"https://vixcloud.co/embed/{json_win_video['id']}"
+            f"https://{json_win_video['host']}/embed/{json_win_video['id']}"
             f"?token={json_win_param['token']}&title={quote(tv_name)}"
             f"&referer=1&expires={json_win_param['expires']}"
             f"&description=S{season}%3AE{ep['n']}+{quote(ep['name'])}&nextEpisode=1"

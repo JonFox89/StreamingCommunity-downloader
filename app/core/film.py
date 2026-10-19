@@ -15,6 +15,8 @@ from app.core._shared import (
     _parse_content,
     _get_m3u8_key,
     _get_m3u8_url,
+    embed_referer,
+    apply_video_host,
 )
 
 logger = logging.getLogger(__name__)
@@ -29,8 +31,8 @@ def _get_iframe(id_title, domain):
     else:
         raise RuntimeError(f"Cannot fetch iframe: HTTP {req.status_code}")
 
-    url_embed = BeautifulSoup(req.text, "lxml").find("iframe").get("src")
-    # vixcloud.co /embed/ is behind Cloudflare — fetch via cloudscraper.
+    url_embed = apply_video_host(BeautifulSoup(req.text, "lxml").find("iframe").get("src"))
+    # The vixcloud /embed/ is behind Cloudflare — fetch via cloudscraper.
     script_text = _fetch_vixcloud_embed(url_embed, referer=f"https://{domain}/")
     logger.info("Embed script (first 800 chars): %s", script_text[:800])
     return script_text, url_embed
@@ -140,10 +142,7 @@ def get_film_languages(id_film: int, domain: str) -> dict:
     embed_content, url_embed = _get_iframe(id_film, domain)
     json_win_video, json_win_param = _parse_content(embed_content, url_embed)
     m3u8_url = _get_m3u8_url(json_win_video, json_win_param)
-    referer = (
-        f"https://vixcloud.co/embed/{json_win_video['id']}"
-        f"?token={json_win_param['token']}&expires={json_win_param['expires']}"
-    )
+    referer = embed_referer(json_win_video, json_win_param)
     langs = fetch_master_languages(m3u8_url, referer)
     explicit_lang = parse_qs(urlparse(url_embed).query).get("lang", [None])[0]
     langs["lang"] = explicit_lang
