@@ -162,31 +162,6 @@ function _setMoreVisible(on) {
   if (wrap) wrap.style.display = on ? '' : 'none';
 }
 
-// ── Grid or list ──────────────────────────────────────────────────────────────
-//
-// A per-browser preference, so localStorage and nothing on the server. Every
-// access is guarded: a private window or blocked site data throws, and the
-// grid is a fine answer then.
-
-const SEARCH_VIEW_KEY = 'sc.searchView';
-let _searchView = (() => {
-  try { return localStorage.getItem(SEARCH_VIEW_KEY) === 'list' ? 'list' : 'grid'; }
-  catch (e) { return 'grid'; }
-})();
-
-function setSearchView(view) {
-  _searchView = view === 'list' ? 'list' : 'grid';
-  try { localStorage.setItem(SEARCH_VIEW_KEY, _searchView); } catch (e) { /* kept for this page only */ }
-  _applySearchView();
-}
-
-function _applySearchView() {
-  document.getElementById('search-results')
-    ?.classList.toggle('results-list', _searchView === 'list');
-  document.querySelectorAll('#search-view [data-view]').forEach(b =>
-    b.classList.toggle('active', b.dataset.view === _searchView));
-}
-
 // Cards are rendered from a base index rather than from the array, so a page
 // appended later indexes into the same flat _searchResults and card n keeps
 // pointing at title n forever.
@@ -351,9 +326,6 @@ function _setStartPageVisible(on) {
   if (hero) hero.style.display = on ? '' : 'none';
   if (shelves) shelves.style.display = on ? '' : 'none';
   if (results) results.style.display = on ? 'none' : '';
-  // The shelves are horizontal rails; grid or list says nothing about them.
-  const view = document.getElementById('search-view');
-  if (view) view.style.display = on ? 'none' : '';
   if (on) _setMoreVisible(false);
 }
 
@@ -364,7 +336,6 @@ function _setStartPageVisible(on) {
 // after a look at Download does not silently re-run the search you already
 // have.
 function searchPageEnter() {
-  _applySearchView();
   const input = document.getElementById('search-input');
   if (!input || !input.value.trim()) { showStartPage(); return; }
   if (!_searchResults.length) doSearch();
@@ -600,7 +571,6 @@ registerActions({
   'search:kind':   d => setKindFilter(d.kind),
   'search:dub':    d => setDubOnly(d.on === '1'),
   'search:open':   d => openTitle(Number(d.idx)),
-  'search:view':   d => setSearchView(d.view),
 });
 
 
